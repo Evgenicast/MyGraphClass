@@ -1,268 +1,371 @@
 #include "MyGraph.h"
 
-MyGraph::MyGraph(size_t VerticesCNT, const AdjacencyMartixType & AdjecencyMatPars)
+using namespace std;
+
+MyGraph_1_0::MyGraph_1_0(string filename_)
 {
-    m_VerticesVec.resize(VerticesCNT, StepState::NOTFOUND); // исходно все вершины равны
-    m_VerticesQueue.push(0); // помещаем первую вершину в очередь(поиск в ширину)
-    m_VerteciesStack.push(0); // помещаем первую вершину в очередь(поиск в глубину)
-    m_AdjacencyMatPtr = &AdjecencyMatPars;
+    ProcessInputDataForGraph(filename_);
 }
 
-std::vector<int> MyGraph::MakeBFS()
+//-----------------описание метода----------------//
+/*
+Обход в ширину, т.е. по родителям.
+Нужно:
+1. вектор статуса вершин(посещен или нет) равный размеру матрицы инцедентности по горизонтали (одномаерность),
+чтобы при проверке потомков каждой последующей верешниы добавлять только не найденные. Пример: Из вершины 1 попадаем
+в 2, 3 и 7. Помечаем их найденными. Далее переходим на вершину 2. Она ведет в уже найденные 1 и 3 и не найденную 4.
+В очередь добавляем только 4-ю, ибо 2 и 3я уже там.
+2. Нужна очередь вершин. Принцип заполнения - в цикле фор от 0 до размера вектора статуса вершины(7 в нашем случае)
+заполняем в ширину, т.е. горизонтально. Т.е. в наешм примере после прохождения первой итерации вершины в очереди будут
+1, 2, 6 (нумерация с 0), что соответствует первому горизонтальному сечению. Затем 2, 6, 3 и т.д.
+*/
+void MyGraph_1_0::TraverseAndSearchPathBFS(int Vertex_)
 {
-    std::vector<int> res;
-    while(!m_VerticesQueue.empty())
+    Edge edge{};
+    --Vertex_;
+    m_VerticiesStatus.clear();
+    m_VerticiesStatus.resize(m_VerticiesCount, StepState::NOTFOUND); // все вершины не найдены пока
+
+    // первая вершина добавляется в очередь в конструкторе
+    while(!m_VerticiesQueue.empty())
     {
-        int Vertex = m_VerticesQueue.front();// извлекаем вершину и сохраняем ее итераторм
-        // прохода по 1ому столбцу, проверяя соседей и добавляя их в очередь. Затем ниже
-        // удаляется эта вершина, очередь двигается на след. самую близку вершину.
-        // в конце выводим текущую вершину.
+        int Vertex = m_VerticiesQueue.front();
+        m_VerticiesQueue.pop();
+        m_VerticiesStatus[Vertex] = StepState::VISITED;
 
-        m_VerticesQueue.pop();
-        m_VerticesVec[Vertex] = StepState::VISITED; // отмечаем как посещенную
-
-        const size_t size = m_VerticesVec.size();
-        for(size_t i = 0; i < size; ++i)
-        {//проверяем для нее все смежные вершины
+        const size_t size = m_VerticiesStatus.size();
+        for (size_t i = 0; i < size; ++i)
+        {
             try
             {
-                if(m_AdjacencyMatPtr->at(Vertex).at(i) == 1 && m_VerticesVec[i] == StepState::NOTFOUND )
+                if (m_AdjenceMatrix.at(Vertex).at(i) == 1 && m_VerticiesStatus[i] == StepState::NOTFOUND)
                 {
-                    m_VerticesQueue.push(i);
-                    m_VerticesVec[i] = StepState::FOUND;
+                    m_VerticiesQueue.push(i);
+                    m_VerticiesStatus[i] = StepState::FOUND;
+
+                    edge.From = Vertex;
+                    edge.To = i;
+                    m_EdgesStack.push(edge);
+                    if (Vertex == Vertex_)
+                    {
+                        break;
+                    }
                 }
             }
-            catch (...)
+            catch (std::out_of_range e)
             {
-                std::cout << "error (at) " << std::endl;
+                std::cout << e.what() << std::endl;
             }
         }
-        res.push_back(Vertex + 1); //Vertex + 1 потому что индексы с нуля (первая вершина не 1, а ноль)
+        m_GraphVec.push_back(Vertex + 1);
     }
-    return res;
+    SearchBFS(Vertex_);
 }
 
-std::vector<int> MyGraph::MakeDFS()
+void MyGraph_1_0::TraverseAndSearchPathDFS(int Vertex_) // lexicographical
 {
-    std::vector<int> res; const size_t size = m_VerticesVec.size() - 1; // 7ая вершина это 6-ой индекс
-    while(!m_VerteciesStack.empty())
-    {
-        int Vertex = m_VerteciesStack.top();// извлекаем вершину и сохраняем ее итераторм
-        // прохода по 1ому столбцу, проверяя соседей и добавляя их в очередь. Затем ниже
-        // удаляется эта вершина, очередь двигается на след. самую близку вершину.
-        // в конце выводим текущую вершину.
+    Edge edge{};
+    --Vertex_;
+    m_VerticiesStatus.clear();
+    m_VerticiesStatus.resize(m_VerticiesCount, StepState::NOTFOUND); // все вершины не найдены пока
 
-        m_VerteciesStack.pop();
-        if(m_VerticesVec[Vertex] == StepState::VISITED)
+    // первая вершина добавляется в стек в конструкторе.
+    while (!m_VerticiesStack.empty())
+    {
+        int vertex = m_VerticiesStack.top();
+        m_VerticiesStack.pop();
+        if (m_VerticiesStatus[vertex] == StepState::VISITED)
             continue;
-        m_VerticesVec[Vertex] = StepState::VISITED; // отмечаем как посещенную
 
-        for(int i = size; i >= 0; --i)
-        {//проверяем для нее все смежные вершины
+        m_VerticiesStatus[vertex] = StepState::VISITED;
+
+        for (int i = m_VerticiesStatus.size() - 1; i >= 0; --i)
+        {
             try
             {
-                if(m_AdjacencyMatPtr->at(Vertex).at(i) == 1 && m_VerticesVec[i] != StepState::VISITED )
+                if (m_AdjenceMatrix[vertex].at(i) == 1 && m_VerticiesStatus[i] == StepState::NOTFOUND)
                 {
-                    m_VerteciesStack.push(i);
-                    m_VerticesVec[i] = StepState::FOUND;
+                    m_VerticiesStack.push(i);
+                    m_VerticiesStatus[i] = StepState::FOUND;
+                    edge.From = vertex;
+                    edge.To = i;
+                    m_EdgesStack.push(edge);
+                    if (vertex == Vertex_)
+                        break;
                 }
             }
-            catch (...)// correct! std::exception !
+            catch (std::exception e)
             {
-                std::cout << "error (at) " << std::endl;
+                std::cout << e.what() << std::endl;
             }
         }
-        res.push_back(Vertex + 1); //Vertex + 1 потому что индексы с нуля (первая вершина не 1, а ноль)
     }
-    return res;
+    SearchDFS(Vertex_);
 }
 
-void MyGraph::RecursiveDFS(int beginVertex, int endVertex)
+void MyGraph_1_0::SearchBFS(int Vertex_)
 {
-    m_SearchResVec.push_back(beginVertex + 1);
-    m_VerticesVec[beginVertex] = StepState::FOUND;
-
-    for(int i = 0; i < endVertex; ++i)
-    {
-        if(m_AdjacencyMatPtr->at(beginVertex).at(i) != 0 && m_VerticesVec[i] == StepState::NOTFOUND )
-        {
-            RecursiveDFS(i, endVertex);
-        }
-    }
-}
-
-void MyGraph::SearchTheShortestPath(std::istream & is)
-{
-    if(!is)
-    {
-        std::cout << "Error. Currpted stream" << std::endl;
-        return;
-    }
-
     Edge edge;
-
-    int VertexToFind;
-    is >> VertexToFind;
-    --VertexToFind; // index and vertecies dont coincide.
-
-    //m_VerticesQueue.push(0); // помещаем в очередь первую вершину !! не нужно, ибо в новом объекте в конструкторе
-
-    while(!m_VerticesQueue.empty())
-    {
-        int CurVertex = m_VerticesQueue.front();
-        m_VerticesQueue.pop();
-        m_VerticesVec[CurVertex] = StepState::VISITED;
-
-        const size_t size = m_VerticesVec.size();
-        for(int i = 0; i < size; ++i)
-        {
-            if(m_AdjacencyMatPtr->at(CurVertex).at(i) == 1 && m_VerticesVec[i] == StepState::NOTFOUND)
-            {
-                m_VerticesQueue.push(i);
-                m_VerticesVec[i] = StepState::FOUND;
-                edge.m_Begin = CurVertex;
-                edge.m_End = i; // получится расстояние, т.к. заходим сюда, если есть сосед/потомок
-                m_EdgesStack.push(edge);
-                if(CurVertex == VertexToFind)
-                    break;
-            }
-        }
-        //std::cout << CurVertex + 1 << std::endl;  можно вывести номера вершин(пукт черз них всех)
-    }
-
-    //--------search-------------//
-
-    m_SearchResVec.push_back(VertexToFind + 1); // Serched vertex;
-    while(!m_EdgesStack.empty())
+    //++Vertex_; // нельзя. Нужно не менять значение, ибо в стеке все минус 1
+    std::cout << "Path to vertex " << Vertex_ + 1 << std::endl;
+    std::cout << Vertex_ + 1;
+    while (!m_EdgesStack.empty())
     {
         edge = m_EdgesStack.top();
         m_EdgesStack.pop();
-        if(edge.m_End == VertexToFind)
+        if (edge.To == Vertex_)
         {
-            VertexToFind = edge.m_Begin;
-            m_SearchResVec.push_back(VertexToFind + 1);
+            Vertex_ = edge.From;
+            //++Vertex_; // выше присвоили индекс (т.е. на один меньше)
+            std::cout << " <- " << Vertex_ + 1;
         }
     }
+    std::cout << std::endl;
 }
 
-void MyGraph::SearchLexocographicalOfTheFirstPath(std::istream &is)
+void MyGraph_1_0::SearchDFS(int Vertex_)
 {
-    if(!is)
-    {
-        std::cout << "Error. Currpted stream" << std::endl;
-        return;
-    }
-
     Edge edge;
-
-    int VertexToFind;
-    is >> VertexToFind;
-    --VertexToFind;
-
-    while(!m_VerteciesStack.empty())
-    {
-        int CurVertex = m_VerteciesStack.top();
-        m_VerteciesStack.pop();
-        if(m_VerticesVec[CurVertex] == StepState::VISITED)
-            continue;
-        m_VerticesVec[CurVertex] = StepState::VISITED; // отмечаем как посещенную
-
-        const size_t size = m_VerticesVec.size() - 1;
-        for(int i = size; i >= 0; --i)
-        {
-            if(m_AdjacencyMatPtr->at(CurVertex).at(i) == 1 && m_VerticesVec[i] == StepState::NOTFOUND)
-            {
-                m_VerteciesStack.push(i);
-                m_VerticesVec[i] = StepState::FOUND;
-                edge.m_Begin = CurVertex;
-                edge.m_End = i; // получится расстояние, т.к. заходим сюда, если есть сосед/потомок
-                m_EdgesStack.push(edge);
-                if(CurVertex == VertexToFind)
-                    break;
-            }
-        }
-        //std::cout << CurVertex + 1 << std::endl;  можно вывести номера вершин(пукт черз них всех)
-    }
-
-    //--------search-------------//
-
-    m_SearchResVec.push_back(VertexToFind + 1); // Serched vertex;
-    while(!m_EdgesStack.empty())
+    //++Vertex_; // нельзя. Нужно не менять значение, ибо в стеке все минус 1
+    std::cout << "Path to vertex " << Vertex_ + 1 << std::endl;
+    std::cout << Vertex_ + 1;
+    while (!m_EdgesStack.empty())
     {
         edge = m_EdgesStack.top();
         m_EdgesStack.pop();
-        if(edge.m_End == VertexToFind)
+        if (edge.To == Vertex_)
         {
-            VertexToFind = edge.m_Begin;
-            m_SearchResVec.push_back(VertexToFind + 1);
+            Vertex_ = edge.From;
+            std::cout << " <- " << Vertex_ + 1;
         }
     }
-
-}
-
-void MyGraph::ClearVector()
-{
-    m_VerticesVec.clear();
-}
-
-void MyGraph::ClearQueue()
-{
-    std::queue<int> emptyQue;
-    std::swap(m_VerticesQueue, emptyQue);
-}
-
-void MyGraph::PrintDFS(std::ostream & os)
-{
-    for(const auto & Vertices : MakeDFS())
-        os << Vertices << std::endl;
-            os << std::endl;
-}
-
-void MyGraph::PrintBFS(std::ostream &os)
-{
-    for(const auto & Vertices : MakeBFS())
-        os << Vertices << std::endl;
-           os << std::endl;
-}
-
-void MyGraph::PrintSearchRes()
-{
     std::cout << std::endl;
-    if(!m_SearchResVec.empty())
+}
+//----------Deikstra------------------//
+void MyGraph_1_0::MakeShortestPathTo()
+{
+    constexpr size_t MAX_VALUE_INDEX = 10000;
+    constexpr size_t MAX_VALUE_WEIGHT = 20000; // любое заранее большее, чем возможные веса ребрa, число. Для сравнения между ними. (Вспомни метод через макс.)
+    m_PathWeightsSumVec.resize(m_VerticiesCount, MAX_VALUE_WEIGHT);
+    vector<StepState> visited_edges_vec(m_VerticiesCount, StepState::NOTVISITED);
+    int search_index;
+    int min_weight;
+    int weight_sum = 0;
+    m_PathWeightsSumVec[0] = 0;
+
+    do
     {
-        auto end = m_SearchResVec.rend()-1;
-        std::cout << "The way to the verice " << *end << " is: " << std::endl;
-        for(auto begin = m_SearchResVec.rbegin(); begin != m_SearchResVec.rend(); ++begin)
+        search_index = MAX_VALUE_INDEX; //нужно постоянно инициализиривать тут, чтобы выполнялось условие выхода
+        min_weight = MAX_VALUE_WEIGHT; // изначально всегда максимальное число
+
+        for (int i = 0; i < m_VerticiesCount; ++i)
         {
-            std::cout << *begin;
-            if(begin != end)
+            if (visited_edges_vec[i] == StepState::NOTVISITED && m_PathWeightsSumVec[i] < min_weight) // выбираем вершину с минимальным весом из не посещенных, но посчитанных во втором цикле
             {
-                std::cout << "->";
+                min_weight = m_PathWeightsSumVec[i]; //выбираем минимальный вес из переданных ниже вершин.
+                search_index = i; // передается индекс следующей минимальной вершины.
             }
         }
-        std::cout << std::endl;
+        if (search_index != MAX_VALUE_INDEX)
+        {
+            for (int i = 0; i < m_VerticiesCount; ++i)
+            {
+                if (m_AdjenceMatrix[search_index][i] > 0)
+                {
+                    weight_sum = min_weight + m_AdjenceMatrix[search_index][i];
+                    if (weight_sum < m_PathWeightsSumVec[i])
+                    {
+                        m_PathWeightsSumVec[i] = weight_sum; // записываем веса вершин, куда ведет текущая
+                    }
+                }
+            }
+            visited_edges_vec[search_index] = StepState::VISITED;
+        }
+    } while (search_index < MAX_VALUE_INDEX);
+}
+
+//----------Deikstra------------------//
+
+void MyGraph_1_0::ProcessInputDataForGraph(std::string filename_)
+{
+    if (filename_ == "input.txt")
+    {
+        ifstream f(filename_);
+        if (!f)
+        {
+            cout << "Error! File not open" << endl;
+            return;
+        }
+        CreateNotWeightedGraphFromInputFile(f);
+
     }
-    //std::copy(m_SearchResVec.rbegin(), m_SearchResVec.rend(), std::ostream_iterator<int>(std::cout, "\n"));
+    else if(filename_ == "Deikstra.txt")
+    {
+        ifstream f(filename_);
+        if (!f)
+        {
+            cout << "Error! File not open" << endl;
+            return;
+        }
+        CreateWeightedGraphFromInputFile(f);
+    }
+}
+
+void MyGraph_1_0::CreateWeightedGraphFromInputFile(ifstream & f_)
+{
+    int VertexFrom = 0;
+    int	VertexTo = 0;
+    int EdgeWeight = 0;
+    int GraphSize = 0;
+    string InputStatus;
+    vector<int> VerticiesTo_vec;
+
+    f_ >> GraphSize;
+    m_AdjenceMatrix.resize(GraphSize);
+    for (int i = 0; i < GraphSize; ++i)
+    {
+        m_AdjenceMatrix[i].resize(GraphSize);
+    }
+
+    m_VerticiesQueue.push(0); // первая вершина в очереднь. Равно нулю ибо в себя не приходит. Поиск в ширину. Идем по узлам, поэтому удаляется первая же.
+    m_VerticiesStack.push(0); // первая вершина в стек. Поиск в глубину. Удаляетя последняя добавленная.
+    m_VerticiesCount = GraphSize;
+
+    for (int i = 0; i < GraphSize; ++i)
+    {
+        while (VertexTo != -1)
+        {
+            f_ >> VertexTo;  //f.ppek()
+            if (VertexTo != -1)
+            {
+                f_ >> EdgeWeight;
+                m_AdjenceMatrix[i][VertexTo - 1] = EdgeWeight;
+            }
+        }
+        VertexTo = 0;
+    }
+}
+
+void MyGraph_1_0::CreateNotWeightedGraphFromInputFile(ifstream & f_)
+{
+    int VertexFrom;
+    int	VertexTo = 0;
+    int GraphSize;
+
+    f_ >> GraphSize;
+
+    m_AdjenceMatrix.resize(GraphSize);
+    for (int i = 0; i < GraphSize; ++i)
+    {
+        m_AdjenceMatrix[i].resize(GraphSize);
+    }
+
+    m_VerticiesQueue.push(0); // первая вершина в очереднь. Равно нулю ибо в себя не приходит. Поиск в ширину. Идем по узлам, поэтому удаляется первая же.
+    m_VerticiesStack.push(0); // первая вершина в стек. Поиск в глубину. Удаляетя последняя добавленная.
+    m_VerticiesCount = GraphSize;
+
+    for (int i = 0; i < GraphSize; ++i)
+    {
+        while (VertexTo != -1)
+        {
+            f_ >> VertexTo;
+            if (VertexTo != -1)
+            {
+                m_AdjenceMatrix[i][VertexTo - 1] = 1;
+            }
+        }
+        VertexTo = 0;
+    }
+}
+
+void MyGraph_1_0::PrintGraph()
+{
+    for (const auto & Vertices : m_GraphVec)
+        std::cout << Vertices << std::endl;
     std::cout << std::endl;
 }
 
-void MyGraph::PrintLexSearchRes()
+void MyGraph_1_0::PrintTheShortestPathInWeightedGraph()
 {
-    std::cout << std::endl;
-    if(!m_SearchResVec.empty())
+    cout << "The shortest path through all vertices is: ";
+
+    for(const auto & path : m_PathWeightsSumVec)
     {
-        auto end = m_SearchResVec.rend()-1;
-        std::cout << "The way to the verice " << *end << " is: " << std::endl;
-        for(auto begin = m_SearchResVec.rbegin(); begin != m_SearchResVec.rend(); ++begin)
+        cout << path << ' ';
+    }
+    cout << endl;
+}
+
+void MyGraph_1_0::ProcessAndPrintShortestPath()
+{
+    vector<int> shortest_path_vec(6);
+    int end_index = shortest_path_vec.size() - 2; //идем с конца! индекс последней вершины
+    shortest_path_vec[0] = end_index + 1; // Идем с конца! Последняя вершина
+    int iterator = 1;
+    int weight = m_PathWeightsSumVec[end_index]; // берем вес искомого ребара!!! ПОПРОБОВАТЬ ПЕРЕДАТЬ КАК ПАРАМЕТР
+
+    while(end_index != 0)
+    {
+        for(int i = 0; i < m_VerticiesCount; ++i)
         {
-            std::cout << *begin;
-            if(begin != end)
+            if(m_AdjenceMatrix[i][end_index] != 0)
             {
-                std::cout << "->";
+                int backward_sum = weight - m_AdjenceMatrix[i][end_index];
+                if(backward_sum == m_PathWeightsSumVec[i])
+                {
+                    weight = backward_sum;
+                    end_index = i;
+                    shortest_path_vec[iterator] = i + 1;
+                    ++iterator;
+                }
             }
         }
-        std::cout << std::endl;
     }
-    //std::copy(m_SearchResVec.rbegin(), m_SearchResVec.rend(), std::ostream_iterator<int>(std::cout, "\n"));
-    std::cout << std::endl;
+
+    cout << "The shortest path for the first to the last is: ";
+
+    for(int i = iterator - 1; i >= 0; --i)
+    {
+        cout << shortest_path_vec[i] << ' ';
+    }
+
+    cout << endl;
+    cout << "The shortest path for the first to the last is(copy method): ";
+    copy(shortest_path_vec.rbegin() + 2, shortest_path_vec.rend(), ostream_iterator<int>(cout, " ") );
+    cout << endl;
 }
+
+/*
+           *5*
+        *       *
+    6*             *4
+    *               *
+    *      *1*      *
+    *   *   *  *    *
+    7*      *    *  *
+            3* * * *2
+
+
+Graph
+
+adjency matrix
+
+   { 0 , 1 , 1 , 0 , 0 , 0 , 1 },
+   { 1 , 0 , 1 , 1 , 0 , 0 , 0 },
+   { 1 , 1 , 0 , 0 , 0 , 0 , 0 },
+   { 0 , 1 , 0 , 0 , 1 , 0 , 0 },
+   { 0 , 0 , 0 , 1 , 0 , 1 , 0 },
+   { 0 , 0 , 0 , 0 , 1 , 0 , 1 },
+   { 1 , 0 , 0 , 0 , 0 , 1 , 0 },
+*/
+
+/*
+std::vector<std::vector<int>> AdjecentVect
+{   { 0 , 7 , 9 , 0 , 0 , 14 },
+    { 7 , 0 , 10 , 15 , 0 , 0 },
+    { 9 , 10 , 0 , 11 , 0, 2 },
+    { 0 , 15 , 11 , 0 , 6, 0 },
+    { 0 , 0 , 0 , 6 , 0 , 0 },
+    { 14, 0 , 2 , 0 , 9 , 0 },
+};
+*/

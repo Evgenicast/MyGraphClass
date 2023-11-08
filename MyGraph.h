@@ -1,15 +1,16 @@
 #pragma once
-#include <queue>
-#include <stack>
 #include <vector>
-#include <iostream>
 #include <stack>
+#include <iostream>
 #include <iterator>
+#include <queue>
+#include <exception>
+#include <fstream>
 
 struct Edge
 {
-    int m_Begin;
-    int m_End;
+    int From;
+    int To;
 };
 
 enum class StepState
@@ -17,43 +18,44 @@ enum class StepState
     NOTFOUND = 0,
     FOUND = 1,
     VISITED = 2,
+    NOTVISITED = 3,
 };
 
-static constexpr int VISITED = 2;
-using AdjacencyMartixType = std::vector<std::vector<int>>;
-class MyGraph
+class MyGraph_1_0
 {
 private:
-
-protected:
-    //---------------------проход вершин---------------//
-    const AdjacencyMartixType * m_AdjacencyMatPtr = nullptr;
-    std::vector<StepState> m_VerticesVec; // вершины графа
-    std::queue<int> m_VerticesQueue; // для BFS
-    std::stack<int> m_VerteciesStack; // for DFS
-
-    //-----------------поиск кратчайшего пути-----------//
+    std::vector<std::vector<int>> m_AdjenceMatrix; // граф (матрица инцендентности)
+    std::vector<StepState> m_VerticiesStatus; // вершины графа (NOTFOUND, FOUND, VISITED, NOTVISITED)
+    std::queue<int> m_VerticiesQueue; // для BFS
+    std::stack<int> m_VerticiesStack; // для DFS
+    std::vector<int> m_GraphVec;
+    int m_VerticiesCount;
+    //-------------Search------------//
     std::stack<Edge> m_EdgesStack;
-    std::vector<int> m_SearchResVec;
-
+    std::vector<int> m_SearchResultVec;
+    //-------------Deikstra----------//
+    std::vector<int> m_PathWeightsSumVec;
 public:
-    MyGraph(size_t VerticesCNT, const AdjacencyMartixType & AdjecencyMatPars);
+    MyGraph_1_0() = default;
+    MyGraph_1_0(std::string filename_);
 
-    std::vector<int> MakeBFS();
-    std::vector<int> MakeDFS();
-    void RecursiveDFS(int beginVertex, int endVertex);
+    void TraverseAndSearchPathBFS(int Vertex_);
+    void SearchBFS(int Vertex_);
 
-    void SearchTheShortestPath(std::istream & is);
-    void SearchLexocographicalOfTheFirstPath(std::istream & is);
+    void TraverseAndSearchPathDFS(int Vertex_);
+    void SearchDFS(int Vertex_);
 
-    void ClearVector();
+    //---------------Deikstra---------------//
+    void MakeShortestPathTo();
 
-    void ClearQueue();
+    //---------------input-----------------//
+    void ProcessInputDataForGraph(std::string filename_);
+    void CreateWeightedGraphFromInputFile(std::ifstream & f_);
+    void CreateNotWeightedGraphFromInputFile(std::ifstream & f_);
 
-    void PrintBFS(std::ostream & os);
-    void PrintDFS(std::ostream & os);
-    void PrintSearchRes();
-    void PrintLexSearchRes();
-
+    //-------------Print--------------//
+    void PrintGraph();
+    void PrintTheShortestPathInWeightedGraph(); // Through all vertecies
+    void ProcessAndPrintShortestPath(); //From first to the last
 };
 
