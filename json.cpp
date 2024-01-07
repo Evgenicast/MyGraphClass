@@ -43,7 +43,7 @@ namespace json
 			return Node(std::move(result));
 		}
 
-		Node LoadDict(std::istream& input)
+        Node LoadDict(std::istream & input)
 		{
 			Dict dict;
 
@@ -77,7 +77,7 @@ namespace json
 			return Node(std::move(dict));
 		}
 
-		Node LoadString(std::istream& input)
+        Node LoadString(std::istream & input)
 		{
 			auto it = std::istreambuf_iterator<char>(input);
 			auto end = std::istreambuf_iterator<char>();
@@ -418,7 +418,7 @@ namespace json
 
 	//------------Functions---------------
 
-	Document Load(std::istream& input)
+    Document Load(std::istream & input)
 	{
 		return Document{ LoadNode(input) };
 	}

@@ -47,6 +47,7 @@ void MyGraph_1_0::TraverseAndSearchPathBFS(int vertex_)
     Edge edge;
     --vertex_;
     m_VerticiesStatus.clear();
+    m_VerteciesToPrintVec.clear();
     m_VerticiesStatus.resize(m_VerticiesCount, StepState::NOTFOUND); // все вершины не найдены пока
 
     while(!m_VerticiesQueueBFS.empty())
@@ -80,7 +81,7 @@ void MyGraph_1_0::TraverseAndSearchPathBFS(int vertex_)
         }
         m_VerteciesToPrintVec.push_back(vertex + 1);
     }
-    SearchBFS(vertex_);
+    SearchPath(vertex_);
 }
 
 void MyGraph_1_0::TraverseAndSearchPathDFS(int vertex_) // lexicographical
@@ -88,6 +89,7 @@ void MyGraph_1_0::TraverseAndSearchPathDFS(int vertex_) // lexicographical
     Edge edge;
     --vertex_;
     m_VerticiesStatus.clear();
+    m_VerteciesToPrintVec.clear();
     m_VerticiesStatus.resize(m_VerticiesCount, StepState::NOTFOUND); // все вершины не найдены пока
 
     while (!m_VerticiesStackDFS.empty())
@@ -121,28 +123,10 @@ void MyGraph_1_0::TraverseAndSearchPathDFS(int vertex_) // lexicographical
             m_VerteciesToPrintVec.push_back(vertex + 1);
         }
     }
-    SearchDFS(vertex_);
+    SearchPath(vertex_);
 }
 
-void MyGraph_1_0::SearchBFS(int vertex_)
-{
-    Edge edge;
-    std::cout << "Path to vertex " << vertex_ + 1 << std::endl;
-    std::cout << vertex_ + 1;
-    while (!m_EdgesStack.empty())
-    {
-        edge = m_EdgesStack.top();
-        m_EdgesStack.pop();
-        if (edge.To == vertex_)
-        {
-            vertex_ = edge.From;
-            std::cout << " <- " << vertex_ + 1;
-        }
-    }
-    std::cout << std::endl;
-}
-
-void MyGraph_1_0::SearchDFS(int vertex_)
+void MyGraph_1_0::SearchPath(int vertex_)
 {
     Edge edge;
     std::cout << "Path to vertex " << vertex_ + 1 << std::endl;
@@ -237,8 +221,7 @@ void MyGraph_1_0::CreateWeightedGraphFromInputFile(ifstream & f_)
 }
 
 void MyGraph_1_0::CreateNotWeightedGraphFromInputFile(ifstream & f_)
-{
-    int VertexFrom;
+{    
     int	VertexTo = 0;
     int GraphSize;
 
@@ -317,7 +300,7 @@ void MyGraph_1_0::ProcessAndPrintShortestPath() const
     int end_index = shortest_path_vec.size() - 2;
     shortest_path_vec[0] = end_index + 1;
     int iterator = 1;
-    int weight = m_PathWeightsSumVec[end_index]; // берем вес искомого ребара!!! ПОПРОБОВАТЬ ПЕРЕДАТЬ КАК ПАРАМЕТР
+    int weight = m_PathWeightsSumVec[end_index]; 
 
     while(end_index != 0)
     {

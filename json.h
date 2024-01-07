@@ -64,7 +64,7 @@ namespace json
 		{
 			return std::holds_alternative<Array>(*this);
 		}
-		const Array& AsArray() const
+        const Array & AsArray() const
 		{
 			return (!IsArray()) ? throw std::logic_error("Not a Array") : std::get<Array>(*this);
 		}
@@ -73,7 +73,7 @@ namespace json
 		{
 			return std::holds_alternative<std::string>(*this);
 		}
-		const std::string& AsString() const
+        const std::string & AsString() const
 		{
 			return (!IsString()) ? throw std::logic_error("Not a string") : std::get<std::string>(*this);
 		}
@@ -82,7 +82,7 @@ namespace json
 		{
 			return std::holds_alternative<Dict>(*this);
 		}
-		const Dict& AsDict() const
+        const Dict & AsDict() const
 		{
 			return (!IsMap()) ? throw std::logic_error("Not a dict") : std::get<Dict>(*this);
 		}
@@ -92,13 +92,13 @@ namespace json
 			return GetValue() == rhs.GetValue();
 		}
 
-		const Value& GetValue() const
+        const Value & GetValue() const
 		{
 			return *this;
 		}
 	};
 
-	inline bool operator!=(const Node& lhs, const Node& rhs)
+    inline bool operator!=(const Node & lhs, const Node & rhs)
 	{
 		return !(lhs == rhs);
 	}
@@ -108,7 +108,7 @@ namespace json
 	public:
 
 		explicit Document(Node root)
-			: root_(std::move(root)) {}
+        : root_(std::move(root)) {}
 
 		const Node& GetRoot() const
 		{
@@ -130,8 +130,8 @@ namespace json
 		return !(lhs == rhs);
 	}
 
-	Document Load(std::istream& input);
+    Document Load(std::istream & input);
 
-	void Print(const Document& doc, std::ostream& output);
+    void Print(const Document & doc, std::ostream & output);
 
 } // namespace json

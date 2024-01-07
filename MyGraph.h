@@ -46,6 +46,8 @@ public:
     void TraverseAndSearchPathBFS(int vertex_);
     void SearchBFS(int vertex_);
 
+    void SearchPath(int vertex_);
+
     void TraverseAndSearchPathDFS(int vertex_); //lexicographical
     void SearchDFS(int vertex_);
 
