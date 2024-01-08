@@ -285,7 +285,7 @@ void MyGraph_1_0::PrintGraph()
 
 void MyGraph_1_0::PrintTheShortestPathInWeightedGraph() const
 {
-    cout << "The shortest path through all vertices is: ";
+    cout << "Weights of all edges from first to last vertex: ";
 
     for(const auto & path : m_PathWeightsSumVec)
     {
